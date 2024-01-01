@@ -1,0 +1,13 @@
+package model
+
+import "gorm.io/gorm"
+
+type Product struct {
+	gorm.Model
+	Desc        string  `json:"desc"`
+	Image       string  `json:"image"`
+	Price       float64 `json:"price"`
+	IsAvailable bool    `json:"is_available"`
+	SellerID    uint    `json:"seller_id"`
+	CategoryID  uint    `json:"category_id"`
+}
