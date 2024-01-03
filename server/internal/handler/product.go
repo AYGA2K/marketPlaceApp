@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"server/internal/database"
 	"server/internal/model"
 
@@ -35,6 +36,7 @@ func (h *ProductHandler) GetProducts(c *fiber.Ctx) error {
 	db := h.DBService.GetDB()
 	products := []model.Product{}
 	db.Find(&products)
+	fmt.Println(products)
 
 	return c.Status(200).JSON(products)
 }

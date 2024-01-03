@@ -31,6 +31,7 @@ func GenerateJWT(token_type string, user User, expiry time.Duration) (string, er
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
 	if token_type == "access" {
 		// Generate encoded token and send it as response.
 		access := os.Getenv("ACCESS_KEY")
@@ -39,6 +40,7 @@ func GenerateJWT(token_type string, user User, expiry time.Duration) (string, er
 
 		return tokenString, err
 	}
+
 	if token_type == "refresh" {
 		// Generate encoded token and send it as response.
 		refresh := os.Getenv("REFRESH_KEY")

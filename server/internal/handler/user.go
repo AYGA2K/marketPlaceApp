@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"server/internal/database"
 	"server/internal/model"
 	"time"
@@ -70,7 +69,6 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-	fmt.Println(loginRequest)
 
 	if err := c.BodyParser(&loginRequest); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON payload"})
