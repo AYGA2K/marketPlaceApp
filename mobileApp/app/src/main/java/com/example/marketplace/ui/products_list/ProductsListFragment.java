@@ -33,7 +33,8 @@ public class ProductsListFragment extends Fragment {
     private List<Product> productList;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_products_list, container, false);
 
         recyclerView = root.findViewById(R.id.recyclerViewProducts);
