@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.marketplace.R;
+import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
@@ -40,7 +41,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         return productList.size();
     }
 
-    public static class ProductViewHolder extends RecyclerView.ViewHolder {
+    public class ProductViewHolder extends RecyclerView.ViewHolder {
         private ImageView imageProduct;
         private TextView textProductName;
         private TextView textProductDescription;
@@ -60,9 +61,16 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             // Load product data into the views
             textProductName.setText(product.getName());
             textProductDescription.setText(product.getDescription());
-            textProductPrice.setText(String.valueOf(product.getPrice())); // Convert int to String
-            textSellerPhoneNumber.setText(product.getSellerPhoneNumber());  // Load image using your preferred image loading library (e.g., Glide, Picasso)
-            // Example: Glide.with(itemView).load(product.getImageUrl()).into(imageProduct);
+            textProductPrice.setText(String.valueOf(product.getPrice()));
+            textSellerPhoneNumber.setText(product.getSellerPhoneNumber());
+
+            // Load the image using Picasso
+            Picasso.get()
+                    .load("http://192.168.11.128:8080/product/image/" + product.getImage())
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(android.R.drawable.ic_dialog_alert)  // Use a valid drawable resource for error
+                    .into(imageProduct);
+
         }
     }
 }

@@ -148,10 +148,50 @@ func (h *ProductHandler) DeleteProduct(c *fiber.Ctx) error {
 	return c.Status(200).JSON("Successfully deleted Product")
 }
 
+func (h *ProductHandler) UploadImage(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).JSON("Please ensure that :id is an integer")
+	}
+
+	file, err := c.FormFile("image")
+	if err != nil {
+		return c.Status(500).JSON(err.Error())
+	}
+
+	var product model.Product
+	err = findProduct(id, h.DBService.GetDB(), &product)
+	if err != nil {
+		return c.Status(400).JSON(err.Error())
+	}
+
+	// Save the uploaded image file
+	filename := fmt.Sprintf("product_%d_%s", id, file.Filename)
+	if err := c.SaveFile(file, "uploads/"+filename); err != nil {
+		return c.Status(500).JSON(err.Error())
+	}
+
+	// Update the product's image field with the new filename
+	product.Image = filename
+	h.DBService.GetDB().Save(&product)
+
+	return c.Status(200).JSON(product)
+}
+
 func findProduct(id int, db *gorm.DB, product *model.Product) error {
 	db.Find(&product, "id = ?", id)
 	if product.ID == 0 {
 		return errors.New("product does not exist")
 	}
 	return nil
+}
+
+func (h *ProductHandler) GetProductImage(c *fiber.Ctx) error {
+	name := c.Params("name")
+	if name == "" {
+		return c.Status(400).JSON("Please provide a product name")
+	}
+
+	// Serve the image file
+	return c.SendFile("uploads/" + name)
 }

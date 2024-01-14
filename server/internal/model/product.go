@@ -8,6 +8,7 @@ type Product struct {
 	Desc        string  `json:"desc"`
 	Image       string  `json:"image"`
 	Price       float64 `json:"price"`
+	Phone       string  `json:"phone"`
 	IsAvailable bool    `json:"is_available"`
 	SellerID    uint    `json:"seller_id"`
 	CategoryID  uint    `json:"category_id"`

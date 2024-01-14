@@ -28,6 +28,7 @@ public class Product {
     @SerializedName("price")
     private double price;
 
+
     @SerializedName("is_available")
     private boolean isAvailable;
 
@@ -36,12 +37,13 @@ public class Product {
 
     @SerializedName("category_id")
     private int categoryId;
-    private  String sellerPhoneNumber;
+    @SerializedName("phone")
+    private  String phone;
     public Product(String name, String description, double price, String sellerPhoneNumber) {
         this.name = name;
         this.description = description;
         this.price = price;
-        this.sellerPhoneNumber = sellerPhoneNumber;
+        this.phone = sellerPhoneNumber;
     }
 
     public int getId() {
@@ -133,11 +135,11 @@ public class Product {
     }
 
     public String getSellerPhoneNumber() {
-        return sellerPhoneNumber;
+        return phone;
     }
 
     public void setSellerPhoneNumber(String sellerPhoneNumber) {
-        this.sellerPhoneNumber = sellerPhoneNumber;
+        this.phone = sellerPhoneNumber;
     }
 // Add getters and setters as needed
 }
