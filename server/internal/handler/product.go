@@ -195,3 +195,43 @@ func (h *ProductHandler) GetProductImage(c *fiber.Ctx) error {
 	// Serve the image file
 	return c.SendFile("uploads/" + name)
 }
+
+// Get all products by categoryId ans sellerId
+func (h *ProductHandler) GetProductsByCategoryAndSeller(c *fiber.Ctx) error {
+	categoryId, err := c.ParamsInt("categoryId")
+	if err != nil {
+		return err
+	}
+	sellerId, err := c.ParamsInt("userId")
+	if err != nil {
+		return err
+	}
+	db := h.DBService.GetDB()
+	products := []model.Product{}
+	db.Find(&products, "category_id = ? AND seller_id = ?", categoryId, sellerId)
+	return c.Status(200).JSON(products)
+}
+
+// Get product by categoryId
+func (h *ProductHandler) GetProductsByCategory(c *fiber.Ctx) error {
+	categoryId, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+	db := h.DBService.GetDB()
+	products := []model.Product{}
+	db.Find(&products, "is_available = ? AND category_id = ?", true, categoryId)
+	return c.Status(200).JSON(products)
+}
+
+// Ger product by sellerId
+func (h *ProductHandler) GetProductsBySeller(c *fiber.Ctx) error {
+	sellerId, err := c.ParamsInt("userId")
+	if err != nil {
+		return err
+	}
+	db := h.DBService.GetDB()
+	products := []model.Product{}
+	db.Find(&products, "is_available = ? AND seller_id = ?", true, sellerId)
+	return c.Status(200).JSON(products)
+}

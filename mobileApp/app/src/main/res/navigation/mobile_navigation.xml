@@ -30,11 +30,6 @@
         android:label="@string/add_products"
         tools:layout="@layout/fragment_add_products" />
 
-    <fragment
-        android:id="@+id/nav_slideshow"
-        android:name="com.example.marketplace.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_slideshow"
-        tools:layout="@layout/fragment_slideshow" />
 
     <fragment
         android:id="@+id/signUpFragment"
@@ -50,6 +45,9 @@
         android:name="com.example.marketplace.ui.login.LoginFragment"
         android:label="Login"
         tools:layout="@layout/fragment_login" >
+        <action
+            android:id="@+id/action_loginFragment_to_signupFragment"
+            app:destination="@id/signUpFragment" />
         <action
             android:id="@+id/action_loginFragment_to_productsListFragment"
             app:destination="@id/nav_products_list" />

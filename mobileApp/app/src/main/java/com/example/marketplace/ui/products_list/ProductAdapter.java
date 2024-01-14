@@ -18,6 +18,10 @@ import java.util.List;
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder> {
 
     private List<Product> productList;
+    public void setProducts(List<Product> productList) {
+        this.productList = productList;
+        notifyDataSetChanged();
+    }
 
     public ProductAdapter(List<Product> productList) {
         this.productList = productList;
@@ -61,14 +65,14 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             // Load product data into the views
             textProductName.setText(product.getName());
             textProductDescription.setText(product.getDescription());
-            textProductPrice.setText(String.valueOf(product.getPrice()));
-            textSellerPhoneNumber.setText(product.getSellerPhoneNumber());
+            textProductPrice.setText(String.valueOf(product.getPrice()+" DH"));
+            textSellerPhoneNumber.setText( "Phone: "+ product.getSellerPhoneNumber());
 
             // Load the image using Picasso
             Picasso.get()
                     .load("http://192.168.11.128:8080/product/image/" + product.getImage())
                     .placeholder(R.drawable.placeholder_image)
-                    .error(android.R.drawable.ic_dialog_alert)  // Use a valid drawable resource for error
+                    .error(android.R.drawable.ic_dialog_alert)
                     .into(imageProduct);
 
         }

@@ -1,10 +1,16 @@
 package com.example.marketplace.ui.products_list;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -12,25 +18,29 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.marketplace.R;
-import com.google.gson.Gson;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
-import java.lang.reflect.Type;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Path;
 
 public class ProductsListFragment extends Fragment {
+
+    private static final String TAG = ProductsListFragment.class.getSimpleName();
     private RecyclerView recyclerView;
     private List<Product> productList;
+    private ProductAdapter productAdapter;
+    private Spinner categorySpinner;
+    private boolean isBuyer;
+
+    private static final int ALL_CATEGORIES = -1;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -40,86 +50,167 @@ public class ProductsListFragment extends Fragment {
         recyclerView = root.findViewById(R.id.recyclerViewProducts);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
-        // Fetch data from the API
-        new FetchProductsTask().execute();
+        productAdapter = new ProductAdapter(new ArrayList<>());
+        recyclerView.setAdapter(productAdapter);
+
+        categorySpinner = root.findViewById(R.id.categorySpinner);
+        SharedPreferences preferences = requireActivity().getSharedPreferences("MY_APP", Context.MODE_PRIVATE);
+        isBuyer = preferences.getBoolean("IS_BUYER", false);
+
+        // Fetch categories dynamically
+        ProductApi productApi = getProductApi();
+        Call<List<Category>> getCategoriesCall = productApi.getAllCategories();
+
+        getCategoriesCall.enqueue(new Callback<List<Category>>() {
+            @Override
+            public void onResponse(Call<List<Category>> call, Response<List<Category>> response) {
+                if (response.isSuccessful()) {
+                    List<Category> categories = response.body();
+                    categories.add(new Category(-1, "All"));
+
+                    // Populate the spinner with dynamic categories
+                    ArrayAdapter<Category> adapter = new ArrayAdapter<>(
+                            requireContext(),
+                            android.R.layout.simple_spinner_item,
+                            categories
+                    );
+
+                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    categorySpinner.setAdapter(adapter);
+
+                    categorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                            Category selectedCategory = (Category) parentView.getItemAtPosition(position);
+                            int selectedCategoryId = selectedCategory.getID();
+
+                            Log.d(TAG, "Selected category ID: " + selectedCategoryId);
+
+                            // Load products based on user type (buyer or seller)
+                            new FetchProductsTask(productApi, selectedCategoryId).execute();
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parentView) {
+                            Log.d(TAG, "No category selected");
+                            // Do nothing here
+                        }
+                    });
+
+                } else {
+                    Log.e(TAG, "Failed to fetch categories. HTTP Code: " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Category>> call, Throwable t) {
+                Log.e(TAG, "Error fetching categories: " + t.getMessage());
+            }
+        });
+
+        // Fetch products initially with all categories
+        new FetchProductsTask(productApi, ALL_CATEGORIES).execute();
 
         return root;
     }
 
+    private ProductApi getProductApi() {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://192.168.11.128:8080/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        return retrofit.create(ProductApi.class);
+    }
+
     private class FetchProductsTask extends AsyncTask<Void, Void, List<Product>> {
+
+        private final ProductApi productApi;
+        private final int categoryId;
+
+        FetchProductsTask(ProductApi productApi, int categoryId) {
+            this.productApi = productApi;
+            this.categoryId = categoryId;
+        }
+
         @Override
         protected List<Product> doInBackground(Void... voids) {
-            return fetchDataFromApi();
+            Log.d(TAG, "Fetching products in background...");
+            return fetchDataFromApi(categoryId);
         }
 
         @Override
         protected void onPostExecute(List<Product> products) {
-            // Update UI with the fetched data
+            Log.d(TAG, "Products fetched successfully. Updating UI...");
+
             productList = products;
-            ProductAdapter productAdapter = new ProductAdapter(productList);
-            recyclerView.setAdapter(productAdapter);
+            productAdapter.setProducts(productList);
         }
-    }
 
-    private List<Product> fetchDataFromApi() {
-        List<Product> productList = new ArrayList<>();
+        private List<Product> fetchDataFromApi(int categoryId) {
+            List<Product> productList = new ArrayList<>();
 
-        try {
-            // Replace "your_api_endpoint" with the actual endpoint of your API
-            URL url = new URL("http://192.168.11.128:8080/product/list");
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+            Log.d(TAG, "Fetching products for category ID: " + categoryId);
+
+            // Grab user ID from shared preferences
+            int userId = getUserId();
+
+            Call<List<Product>> getProductsCall;
+            if (isBuyer) {
+                // Load products for the buyer
+                if (categoryId == ALL_CATEGORIES) {
+                    getProductsCall = productApi.getAllProducts();
+                } else {
+                    getProductsCall = productApi.getProductsByCategory(categoryId);
+                }
+            } else {
+                // Load products for the seller
+                if (categoryId == ALL_CATEGORIES) {
+                    getProductsCall = productApi.getProductsForSeller(userId);
+                } else {
+                    getProductsCall = productApi.getProductsByCategoryAndUser(categoryId, userId);
+                }
+            }
 
             try {
-                // Set up the HTTP request
-                urlConnection.setRequestMethod("GET");
-                urlConnection.setRequestProperty("Content-Type", "application/json");
-
-                // Check if the response code is successful
-                if (urlConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                    // Read the response data
-                    InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-                    String response = convertInputStreamToString(in);
-
-                    // Parse the JSON response and populate the productList
-                    productList = parseJsonResponse(response);
+                Response<List<Product>> response = getProductsCall.execute();
+                Log.d("Response: ",response.toString());
+                if (response.isSuccessful()) {
+                    productList = response.body();
                 } else {
-                    // Handle the error, e.g., show an error message
+                    Log.e(TAG, "Failed to fetch products. HTTP Code: " + response.code());
                 }
-            } finally {
-                urlConnection.disconnect();
+            } catch (IOException e) {
+                Log.e(TAG, "Error fetching products: " + e.getMessage());
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+
+            return productList;
         }
 
-        return productList;
+        private int getUserId() {
+            SharedPreferences preferences = requireActivity().getSharedPreferences("MY_APP", Context.MODE_PRIVATE);
+            return preferences.getInt("ID", -1);
+        }
     }
 
-    private String convertInputStreamToString(InputStream inputStream) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-        StringBuilder sb = new StringBuilder();
-        String line;
+    public interface ProductApi {
+        @GET("product/list")
+        Call<List<Product>> getAllProducts();
 
-        while ((line = reader.readLine()) != null) {
-            sb.append(line);
-        }
+        @GET("product/category/{id}")
+        Call<List<Product>> getProductsByCategory(@Path("id") int categoryId);
 
-        inputStream.close();
-        return sb.toString();
-    }
+        @GET("product/list/{categoryId}/{userId}")
+        Call<List<Product>> getProductsByCategoryAndUser(
+                @Path("categoryId") int categoryId,
+                @Path("userId") int userId
+        );
 
-    private List<Product> parseJsonResponse(String jsonResponse) {
-        List<Product> productList = new ArrayList<>();
+        @GET("product/user/{userId}")
+        Call<List<Product>> getProductsForSeller(@Path("userId") int userId);
 
-
-        try {
-            Gson gson = new Gson();
-            Type productListType = new TypeToken<List<Product>>() {}.getType();
-            productList = gson.fromJson(jsonResponse, productListType);
-        } catch (JsonParseException e) {
-            e.printStackTrace();
-        }
-
-        return productList;
+        @GET("category/list")
+        Call<List<Category>> getAllCategories();
     }
 }

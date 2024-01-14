@@ -93,7 +93,7 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Error generating token"})
 	}
 
-	return c.Status(200).JSON(fiber.Map{"token": token})
+	return c.Status(200).JSON(fiber.Map{"token": token, "ID": user.ID, "is_buyer": user.IsBuyer})
 }
 
 func (h *UserHandler) GetUser(c *fiber.Ctx) error {

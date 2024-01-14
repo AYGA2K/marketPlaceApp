@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 // Product.java
 public class Product {
     @SerializedName("ID")
-    private int id;
+    private int ID;
 
     @SerializedName("CreatedAt")
     private String createdAt;
@@ -47,11 +47,11 @@ public class Product {
     }
 
     public int getId() {
-        return id;
+        return ID;
     }
 
     public void setId(int id) {
-        this.id = id;
+        this.ID = id;
     }
 
     public String getCreatedAt() {

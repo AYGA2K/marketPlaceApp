@@ -24,7 +24,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,7 +42,7 @@ public class LoginFragment extends Fragment {
 	private TextView textViewSignUpLink;
 
 	public View onCreateView(@NonNull LayoutInflater inflater,
-			ViewGroup container, Bundle savedInstanceState) {
+							 ViewGroup container, Bundle savedInstanceState) {
 		loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
 
 		View root = inflater.inflate(R.layout.fragment_login, container, false);
@@ -67,9 +66,8 @@ public class LoginFragment extends Fragment {
 		textViewSignUpLink.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				// Navigate to SignUpFragment (you need to implement navigation logic)
-				// For example:
-				// Navigation.findNavController(view).navigate(R.id.action_loginFragment_to_signUpFragment);
+
+				Navigation.findNavController(view).navigate(R.id.action_loginFragment_to_signupFragment);
 			}
 		});
 
@@ -102,7 +100,7 @@ public class LoginFragment extends Fragment {
 					urlConnection.setDoOutput(true);
 
 					// Write the JSON data to the output stream
-					try (OutputStream os = new BufferedOutputStream(urlConnection.getOutputStream())) {
+					try (OutputStream os = urlConnection.getOutputStream()) {
 						byte[] input = params[0].getBytes(StandardCharsets.UTF_8);
 						os.write(input, 0, input.length);
 					}
@@ -110,9 +108,9 @@ public class LoginFragment extends Fragment {
 					if (urlConnection.getResponseCode() == HttpURLConnection.HTTP_OK) {
 						InputStream in = new BufferedInputStream(urlConnection.getInputStream());
 						String response = convertInputStreamToString(in);
-						Log.d("Response", response);
+						Log.d("Response", "JSON Response: " + response);
 						// Parse the JSON response and extract the token
-						return parseTokenFromJson(response);
+						return response; // Return jsonResponse directly
 					} else {
 						return null;
 					}
@@ -125,51 +123,52 @@ public class LoginFragment extends Fragment {
 			}
 		}
 
-        private String convertInputStreamToString(InputStream inputStream) throws IOException {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            StringBuilder sb = new StringBuilder();
-            String line;
+		private String convertInputStreamToString(InputStream inputStream) throws IOException {
+			BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+			StringBuilder sb = new StringBuilder();
+			String line;
 
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
+			while ((line = reader.readLine()) != null) {
+				sb.append(line);
+			}
 
-            inputStream.close();
-            return sb.toString();
-        }
-
-        @Override
-		protected void onPostExecute(String token) {
-			Log.d("Token", "Token: " + token);
-            if (token != null) {
-                // Login successful, save the token
-                saveToken(token);
-
-                Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_SHORT).show();
-
-                // Navigate to the next screen (ProductsListFragment)
-                Navigation.findNavController(requireView()).navigate(R.id.action_loginFragment_to_productsListFragment);
-            } else {
-                // Login failed
-                Toast.makeText(requireContext(), "Login failed", Toast.LENGTH_SHORT).show();
-            }
+			inputStream.close();
+			return sb.toString();
 		}
 
-		private String parseTokenFromJson(String jsonResponse) {
+		@Override
+		protected void onPostExecute(String jsonResponse) {
+			Log.d("Response", "JSON Response: " + jsonResponse);
+
+			if (jsonResponse != null) {
+				// Login successful, save the token and ID
+				saveTokenAndID(jsonResponse);
+
+				Toast.makeText(requireContext(), "Login successful", Toast.LENGTH_SHORT).show();
+
+				// Navigate to the next screen (ProductsListFragment)
+				Navigation.findNavController(requireView()).navigate(R.id.action_loginFragment_to_productsListFragment);
+			} else {
+				// Login failed
+				Toast.makeText(requireContext(), "Login failed", Toast.LENGTH_SHORT).show();
+			}
+		}
+
+		private void saveTokenAndID(String jsonResponse) {
 			try {
 				// Parse the JSON response and extract the token
 				JSONObject jsonObject = new JSONObject(jsonResponse);
-				return jsonObject.getString("token");
+				String token = jsonObject.getString("token");
+				int ID = jsonObject.getInt("ID");
+				Boolean is_buyer =jsonObject.getBoolean("is_buyer");
+
+
+				// Save the token and ID in SharedPreferences
+				SharedPreferences preferences = requireActivity().getSharedPreferences("MY_APP", Context.MODE_PRIVATE);
+				preferences.edit().putString("TOKEN", token).putInt("ID", ID).putBoolean("IS_BUYER",is_buyer).apply();
 			} catch (JSONException e) {
 				e.printStackTrace();
-				return null;
 			}
 		}
-        private void saveToken(String token) {
-            // Use SharedPreferences to store the token
-			SharedPreferences preferences = getActivity().getSharedPreferences("MY_APP", Context.MODE_PRIVATE);
-			preferences.edit().putString("TOKEN", token).apply();
-        }
-
-    }
+	}
 }

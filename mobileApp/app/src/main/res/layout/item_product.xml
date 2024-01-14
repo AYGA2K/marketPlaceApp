@@ -14,7 +14,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Product Image -->
         <ImageView
             android:id="@+id/imageProduct"
             android:layout_width="match_parent"
@@ -23,7 +22,6 @@
             android:src="@drawable/placeholder_image"
             android:contentDescription="@string/product_image_description"/>
 
-        <!-- Product Name -->
         <TextView
             android:id="@+id/textProductName"
             android:layout_width="match_parent"
@@ -32,18 +30,19 @@
             android:textStyle="bold"
             android:padding="8dp"/>
 
-        <!-- Product Description -->
+
         <TextView
             android:id="@+id/textProductDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="8dp"/>
 
-        <!-- Product Price -->
+
         <TextView
             android:id="@+id/textProductPrice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="@string/label_price"
             android:textSize="16sp"
             android:textStyle="bold"
             android:padding="8dp"/>
@@ -53,6 +52,7 @@
             android:id="@+id/textSellerPhoneNumber"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="@string/label_phone_number"
             android:textSize="14sp"
             android:padding="8dp"/>
     </LinearLayout>
